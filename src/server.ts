@@ -2,11 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./routes/auth.route";
-import projectRoutes from "./routes/projectRoutes"
+import projectRoutes from "./routes/projectRoutes";
+import taskRoutes from "./routes/taskRoutes";
 import connectDB from "./config/db";
 
 dotenv.config();
-// connectDB();
 
 const app = express();
 app.set('trust proxy', true);
@@ -20,6 +20,7 @@ connectDB();
 app.get("/", (req, res) => { res.send("🚀 API is running..."); });
 app.use("/auth", authRouter);
 app.use("/project", projectRoutes);
+app.use("/task", taskRoutes);
  
 
 

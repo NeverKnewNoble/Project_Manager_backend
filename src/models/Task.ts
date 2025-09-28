@@ -5,7 +5,7 @@ export interface TaskObject extends Document {
     description?: string,
     status: string,
     project_id: string,
-    user_id: string,
+    owner_id: string,
     assigned_to: string,
     due_date: Date,
     createdAt: Date,
@@ -17,7 +17,7 @@ const TaskSchema: Schema<TaskObject> = new Schema<TaskObject>({
     description: { type: String, required: true},
     status: { type: String, required: true, default: "Pending", enum: ["Pending", "In progress", "Completed"]},
     project_id: { type: String, required: true},
-    user_id: { type: String, required: true},
+    owner_id: { type: String, required: true},
     assigned_to: { type: String, required: true},
     due_date: { type: Date, required: true},
 }, { timestamps: true })
