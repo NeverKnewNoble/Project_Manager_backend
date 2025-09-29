@@ -5,8 +5,8 @@ import { createTask, getAllTasks, getTaskById, updateTaskById, deleteTaskById} f
 
 //? Define Endpoints
 // All routes require authentication
-router.get("/", authenticateUser, getAllTasks); // Get all tasks
-router.post("/create", authenticateUser, createTask); // Create task
+router.get("/project/:projectName", authenticateUser, getAllTasks); // Get all tasks for a project by name
+router.post("/create", authenticateUser, createTask); // Create task for a project by name
 router.put("/update/:id", authenticateUser, updateTaskById); // Update task
 router.delete("/delete/:id", authenticateUser, deleteTaskById); // Delete task
 router.get("/:id", authenticateUser, getTaskById); // Get task by id
