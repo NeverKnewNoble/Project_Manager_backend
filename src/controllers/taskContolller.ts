@@ -1,9 +1,10 @@
 import { Request, Response } from "express"
 import {Task} from "../models/Task";
+import {Project} from "../models/Project";
 
 
 //? CREATE TASKS
-//! Create tasks linked to project - POST
+//! Create tasks linked to project by name - POST
 export const createTask = async (req: Request, res: Response) => {
     try {
         // check user authentication
@@ -11,28 +12,69 @@ export const createTask = async (req: Request, res: Response) => {
             return res.status(401).json({ error: "You are not Authenticated"});
         }
 
-        const { title, description, status } = req.body;
+        const { title, description, status, assigned_to, due_date, project_name } = req.body;
 
+        // Validate required fields
         if (!title) {
             return res.status(400).json({ error: "Please provide a title"});
         }
+        
+        if (!description) {
+            return res.status(400).json({ error: "Please provide a description"});
+        }
+        
+        if (!assigned_to) {
+            return res.status(400).json({ error: "Please provide assigned_to field"});
+        }
+        
+        if (!due_date) {
+            return res.status(400).json({ error: "Please provide a due_date"});
+        }
 
-        const createTask = new Task({
+        if (!project_name) {
+            return res.status(400).json({ error: "Please provide a project_name"});
+        }
+
+        // Find the project by name and verify ownership
+        const project = await Project.findOne({ 
+            name: project_name, 
+            owner_id: req.user.id 
+        });
+
+        if (!project) {
+            return res.status(404).json({ 
+                error: `Project "${project_name}" not found or you don't have access to it` 
+            });
+        }
+
+        const newTask = new Task({
             owner_id: req.user.id, 
+            project_id: (project._id as any).toString(), // Use the project's _id
             title,
             description,
-            status
+            status: status || "Pending",
+            assigned_to,
+            due_date: new Date(due_date)
         }) 
 
-        await createTask.save();
-        res.status(201).json({ res: `Project ${title} created successfully`});
+        await newTask.save();
+        res.status(201).json({ 
+            res: `Task "${title}" created successfully for project "${project_name}"`, 
+            task: newTask,
+            project: {
+                id: project._id,
+                name: project.name
+            }
+        });
     }catch(err) {
+        console.error("Create task error:", err);
         res.status(500).json({ error: "Unable to create task"});
     }
 };
 
+
 //? GET TASKS
-//! Get all tasks - GET
+//! Get all tasks for a specific project by name - GET
 export const getAllTasks = async (req: Request, res: Response) => {
     try {
         // check user authentication
@@ -40,16 +82,37 @@ export const getAllTasks = async (req: Request, res: Response) => {
             return res.status(401).json({ error: "You are not Authenticated"});
         }
 
-        const getTasks = await Task.find();
+        const { projectName } = req.params;
         
-        // guard if unable to get tasks
-        if (!getTasks) {
-            return res.status(400).json({ error: "Unable to get all tasks"})
+        // First find the project by name and verify ownership
+        const project = await Project.findOne({ 
+            name: projectName, 
+            owner_id: req.user.id 
+        });
+
+        if (!project) {
+            return res.status(404).json({ 
+                error: `Project "${projectName}" not found or you don't have access to it` 
+            });
         }
         
-        res.status(201).json({ res: getTasks });
+        // Get tasks filtered by project ID and owner
+        const getTasks = await Task.find({ 
+            project_id: (project._id as any).toString(),
+            owner_id: req.user.id 
+        });
+        
+        res.status(200).json({ 
+            res: getTasks,
+            project: {
+                id: project._id,
+                name: project.name,
+                description: project.description
+            }
+        });
     } catch(err) {
-        res.status(500).json({error: "Unable to get all tasks"})
+        console.error("Get tasks error:", err);
+        res.status(500).json({error: "Unable to get tasks for this project"})
     }
 };
 
